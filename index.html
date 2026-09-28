@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT Ujian Anti-Kecurangan - Metabolisme Sel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Mencegah seleksi teks pada halaman ujian */
+        .unselectable {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
+
+    <!-- HEADER / NAVBAR -->
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-700 p-2 rounded-lg">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-amber-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-tight">CBT ATS BIOLOGI</h1>
+                    <p class="text-xs text-indigo-200">SMA Negeri 1 Jawilan - TA 2026/2027</p>
+                </div>
+            </div>
+
+            <!-- Timer & Action Status (Tampil saat Ujian) -->
+            <div id="header-status" class="hidden flex items-center space-x-4">
+                <div class="bg-indigo-950 px-3 py-1.5 rounded-lg border border-indigo-700 flex items-center space-x-2">
+                    <i class="fa-regular fa-clock text-amber-400"></i>
+                    <span id="timer-display" class="font-mono text-lg font-bold text-amber-300">90:00</span>
+                </div>
+                <div class="bg-red-800/80 px-3 py-1.5 rounded-lg border border-red-600 flex items-center space-x-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-300"></i>
+                    <span class="text-xs font-semibold">Peringatan: <span id="violation-count" class="text-sm font-bold text-white">0</span>/3</span>
+                </div>
+            </div>
+
+            <button id="btn-guru-modal" onclick="openTeacherAuthModal()" class="text-xs bg-indigo-800 hover:bg-indigo-700 text-indigo-100 px-3 py-2 rounded border border-indigo-600 flex items-center gap-1 transition">
+                <i class="fa-solid fa-user-gear"></i> Akses Panel Guru
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col">
+
+        <!-- 1. REGISTRATION / LOGIN SECTION -->
+        <section id="section-login" class="max-w-lg mx-auto w-full my-auto bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+            <div class="bg-indigo-800 p-6 text-white text-center">
+                <i class="fa-solid fa-shield-halved text-4xl text-amber-400 mb-2"></i>
+                <h2 class="text-2xl font-bold">Portal Ujian Siswa</h2>
+                <p class="text-indigo-200 text-sm mt-1">Asesmen Tengah Semester: Metabolisme Sel</p>
+            </div>
+            
+            <form id="form-start-exam" onsubmit="startExam(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nama Lengkap Siswa</label>
+                    <input type="text" id="student-name" required placeholder="Masukkan Nama Lengkap" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Kelas</label>
+                    <select id="student-class" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-800">
+                        <option value="">-- Pilih Kelas --</option>
+                        <option value="XII-4">XII-4</option>
+                        <option value="XII-6">XII-6</option>
+                        <option value="XII-7">XII-7</option>
+                        <option value="XII-8">XII-8</option>
+                        <option value="XII-9">XII-9</option>
+                        <option value="XII-10">XII-10</option>
+                        <option value="XII-11">XII-11</option>
+                    </select>
+                </div>
+
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-3 rounded text-xs text-amber-900 space-y-1">
+                    <p class="font-bold flex items-center gap-1"><i class="fa-solid fa-circle-exclamation text-amber-600"></i> Aturan Keamanan Ketat Ujian:</p>
+                    <ul class="list-disc list-inside space-y-0.5 text-slate-700">
+                        <li>Dilarang berpindah tab, membuka window lain, atau minimize browser.</li>
+                        <li>Dilarang mengambil screenshot, screen record, atau tombol kombinasi tertentu.</li>
+                        <li><strong>Sistem Peringatan:</strong> Batas maksimal 3 kali pelanggaran. Pelanggaran ke-3 akan mendiskualifikasi ujian secara otomatis dengan <strong>Nilai NOL (0)</strong>.</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> Mulai Ujakan Sekarang
+                </button>
+            </form>
+        </section>
+
+        <!-- 2. EXAM INTERFACE SECTION -->
+        <section id="section-exam" class="hidden flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 unselectable">
+            <!-- Left Panel: Question Display -->
+            <div class="lg:col-span-3 flex flex-col bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 border-b px-6 py-3 flex justify-between items-center">
+                    <span id="question-number-title" class="font-bold text-slate-700 text-lg">Soal No. 1</span>
+                    <span id="question-category" class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded">Metabolisme Sel</span>
+                </div>
+
+                <!-- Question Body -->
+                <div class="p-6 flex-1 overflow-y-auto">
+                    <div id="question-text" class="text-base text-slate-800 font-medium leading-relaxed mb-6">
+                        Loading soal...
+                    </div>
+
+                    <!-- Options List -->
+                    <div id="options-container" class="space-y-3">
+                        <!-- Options dynamically injected -->
+                    </div>
+                </div>
+
+                <!-- Footer Navigation -->
+                <div class="bg-slate-50 border-t px-6 py-4 flex justify-between items-center">
+                    <button id="btn-prev" onclick="prevQuestion()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-semibold text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i> Sebelumnya
+                    </button>
+
+                    <label class="flex items-center space-x-2 cursor-pointer bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-2 rounded-lg transition text-xs font-semibold">
+                        <input type="checkbox" id="checkbox-doubt" onchange="toggleDoubt()" class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4">
+                        <span>Ragu-Ragu</span>
+                    </label>
+
+                    <button id="btn-next" onclick="nextQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg font-semibold text-sm transition flex items-center gap-2">
+                        Berikutnya <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Question Grid Navigator -->
+            <div class="lg:col-span-1 bg-white rounded-xl shadow border border-slate-200 p-4 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-700 mb-3 border-b pb-2 flex justify-between items-center">
+                        <span>Navigasi Soal</span>
+                        <span id="answered-count" class="text-xs font-normal text-slate-500">0/25 Terjawab</span>
+                    </h3>
+                    
+                    <!-- Grid numbers -->
+                    <div id="navigation-grid" class="grid grid-cols-5 gap-2 max-h-80 overflow-y-auto p-1">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="mt-4 pt-3 border-t text-xs space-y-1 text-slate-600">
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 bg-indigo-600 rounded"></span> Sudah Terjawab</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 bg-amber-400 rounded"></span> Ragu-Ragu</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 bg-slate-200 rounded"></span> Belum Dijawab</div>
+                    </div>
+                </div>
+
+                <button onclick="confirmSubmitExam()" class="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i> Selesai & Submit
+                </button>
+            </div>
+        </section>
+
+        <!-- 3. RESULT SECTION (FOR STUDENT) -->
+        <section id="section-result" class="hidden max-w-2xl mx-auto w-full my-auto bg-white rounded-xl shadow-lg border border-slate-200 p-8 text-center">
+            <div id="result-icon-container" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <!-- Dynamic icon -->
+            </div>
+            
+            <h2 id="result-title" class="text-2xl font-bold text-slate-800">Ujian Telah Selesai</h2>
+            <p id="result-subtitle" class="text-slate-600 text-sm mt-1">Terima kasih telah menyelesaikan Asesmen Tengah Semester.</p>
+
+            <div class="my-6 p-4 bg-slate-50 rounded-lg border border-slate-200 max-w-md mx-auto">
+                <div class="text-xs text-slate-500 uppercase font-semibold">Skor Akhir Anda</div>
+                <div id="result-score" class="text-5xl font-extrabold text-indigo-900 my-2">0</div>
+                <div id="result-status" class="inline-block px-3 py-1 rounded-full text-xs font-bold">Status</div>
+            </div>
+
+            <!-- Detail Identity & Summary -->
+            <div class="text-left bg-slate-100 p-4 rounded-lg text-xs space-y-2 max-w-md mx-auto mb-6">
+                <div class="flex justify-between"><span class="text-slate-500">Nama Siswa:</span><span id="res-student-name" class="font-bold"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Kelas:</span><span id="res-student-class" class="font-bold"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Total Pelanggaran:</span><span id="res-violation-count" class="font-bold text-red-600"></span></div>
+            </div>
+
+            <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm transition">
+                Kembali ke Halaman Utama
+            </button>
+        </section>
+
+        <!-- 4. TEACHER PANEL SECTION -->
+        <section id="section-teacher" class="hidden flex-1 flex flex-col bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+            <div class="flex justify-between items-center border-b pb-4 mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900 flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield"></i> Dashboard Pengawasan & Kelola Guru
+                    </h2>
+                    <p class="text-xs text-slate-500">Pantau hasil siswa dan kelola bank soal ujian secara dinamis.</p>
+                </div>
+                <button onclick="closeTeacherPanel()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded text-xs font-bold transition">
+                    <i class="fa-solid fa-right-from-bracket"></i> Keluar Dashboard
+                </button>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex space-x-2 border-b mb-6">
+                <button id="tab-btn-results" onclick="switchTeacherTab('results')" class="px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600">
+                    <i class="fa-solid fa-list-check"></i> Laporan Hasil Ujian
+                </button>
+                <button id="tab-btn-questions" onclick="switchTeacherTab('questions')" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-indigo-600">
+                    <i class="fa-solid fa-pen-to-square"></i> Kelola & Edit Soal (<span id="total-q-count">0</span>)
+                </button>
+            </div>
+
+            <!-- TAB 1: RESULTS TABLE -->
+            <div id="teacher-tab-results" class="flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-700 text-sm">Rekapitulasi Nilai & Log Kecurangan</h3>
+                    <button onclick="clearAllResults()" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 font-semibold px-3 py-1.5 rounded transition">
+                        <i class="fa-solid fa-trash"></i> Hapus Semua Rekap
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto flex-1 border rounded-lg">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 text-slate-600 uppercase font-semibold border-b">
+                            <tr>
+                                <th class="p-3">Waktu WET</th>
+                                <th class="p-3">Nama Siswa</th>
+                                <th class="p-3">Kelas</th>
+                                <th class="p-3 text-center">Skor Akhir</th>
+                                <th class="p-3 text-center">Status</th>
+                                <th class="p-3 text-center">Pelanggaran</th>
+                                <th class="p-3">Detail Log Kecurangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-results-tbody" class="divide-y text-slate-700">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: QUESTION EDITOR -->
+            <div id="teacher-tab-questions" class="hidden flex-1 flex flex-col space-y-4">
+                <div class="flex justify-between items-center bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                    <span class="text-xs text-indigo-900 font-semibold">Anda dapat menambah, mengedit teks soal, pilihan A-E, serta menentukan kunci jawaban. Perubahan langsung aktif!</span>
+                    <div class="flex gap-2">
+                        <button onclick="resetQuestionsToDefault()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded transition">
+                            <i class="fa-solid fa-rotate-left"></i> Reset ke Soal Default (25)
+                        </button>
+                        <button onclick="openQuestionModal()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded transition">
+                            <i class="fa-solid fa-plus"></i> Tambah Soal Baru
+                        </button>
+                    </div>
+                </div>
+
+                <div id="teacher-questions-list" class="space-y-3 overflow-y-auto max-h-[500px] pr-2">
+                    <!-- Dynamic Question Cards -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: WARNING MODAL (KECURANGAN) -->
+    <div id="modal-warning" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-red-500 animate-bounce-short">
+            <div class="bg-red-600 p-4 text-white text-center">
+                <i class="fa-solid fa-triangle-exclamation text-4xl mb-1"></i>
+                <h3 class="text-xl font-bold uppercase tracking-wider">Peringatan Kecurangan!</h3>
+            </div>
+            <div class="p-5 text-center space-y-3">
+                <p class="text-sm font-semibold text-slate-700">Sistem mendeteksi tindakan tidak diizinkan:</p>
+                <div id="warning-reason" class="bg-red-50 text-red-700 font-mono text-xs p-2.5 rounded border border-red-200">
+                    Pindah Tab / Screen Capture Detected
+                </div>
+                <p class="text-xs text-slate-500">
+                    Ini adalah peringatan ke-<span id="warning-count-num" class="font-bold text-red-600 text-sm">1</span> dari total maksimal 3 kali limit.
+                </p>
+                <p class="text-xs font-bold text-red-600 bg-amber-100 p-2 rounded">
+                    PERINGATAN: Pada pelanggaran ke-3, Ujian akan langsung Selesai secara Otomatis dan Nilai Anda di-set NOL (0)!
+                </p>
+                <button onclick="closeWarningModal()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg text-sm transition">
+                    Saya Mengerti & Kembali Ujian
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: TEACHER AUTH MODAL -->
+    <div id="modal-teacher-auth" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="text-center">
+                <i class="fa-solid fa-lock text-3xl text-indigo-600 mb-2"></i>
+                <h3 class="text-lg font-bold text-slate-800">Otentikasi Guru</h3>
+                <p class="text-xs text-slate-500">Masukkan Password Guru untuk Mengakses Panel</p>
+            </div>
+            <div>
+                <input type="password" id="teacher-password" placeholder="Password Guru" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-center">
+                <p id="auth-error" class="text-red-500 text-xs mt-1 hidden text-center">Password Salah!</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeTeacherAuthModal()" class="flex-1 bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-xs">Batal</button>
+                <button onclick="authenticateTeacher()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg text-xs">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: QUESTION EDITOR MODAL -->
+    <div id="modal-question-editor" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto space-y-4">
+            <h3 id="editor-modal-title" class="text-lg font-bold text-indigo-900 border-b pb-2">Edit Soal</h3>
+            <input type="hidden" id="edit-q-index">
+            
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Teks Pertanyaan/Soal</label>
+                <textarea id="edit-q-text" rows="3" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-600">Pilihan Jawaban (A - E)</label>
+                <div class="grid grid-cols-1 gap-2">
+                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-4">A.</span><input type="text" id="edit-opt-0" class="flex-1 p-2 border rounded text-xs"></div>
+                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-4">B.</span><input type="text" id="edit-opt-1" class="flex-1 p-2 border rounded text-xs"></div>
+                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-4">C.</span><input type="text" id="edit-opt-2" class="flex-1 p-2 border rounded text-xs"></div>
+                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-4">D.</span><input type="text" id="edit-opt-3" class="flex-1 p-2 border rounded text-xs"></div>
+                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-4">E.</span><input type="text" id="edit-opt-4" class="flex-1 p-2 border rounded text-xs"></div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Kunci Jawaban Yang Benar</label>
+                <select id="edit-q-key" class="w-full p-2 border rounded text-xs font-bold text-indigo-900">
+                    <option value="0">Pilihan A</option>
+                    <option value="1">Pilihan B</option>
+                    <option value="2">Pilihan C</option>
+                    <option value="3">Pilihan D</option>
+                    <option value="4">Pilihan E</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t">
+                <button onclick="closeQuestionModal()" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded">Batal</button>
+                <button onclick="saveQuestion()" class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded">Simpan Soal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- DEFAULT 25 QUESTION BANK (METABOLISME SEL) ---
+        const DEFAULT_QUESTIONS = [
+            {
+                q: "Pada proses respirasi aerob, pemecahan satu molekul glukosa (C6H12O6) menjadi dua molekul asam piruvat terjadi pada tahap...",
+                opts: ["Dekarboksilasi Oksidatif", "Daur Krebs", "Glikolisis", "Transpor Elektron", "Fotofosforilasi"],
+                key: 2
+            },
+            {
+                q: "Enzim bekerja secara spesifik berdasarkan teori Lock and Key. Sifat enzim yang ditunjukkan oleh teori tersebut adalah...",
+                opts: [
+                    "Bekerja dua arah (reversibel)",
+                    "Sisi aktif enzim dapat berubah bentuk menyesuaikan substrat",
+                    "Hanya mengatalisis substrat dengan bentuk ruang yang cocok secara presisi",
+                    "Terbuat sepenuhnya dari komponen non-protein",
+                    "Tetap stabil dan tidak terdenaturasi pada suhu di atas 80°C"
+                ],
+                key: 2
+            },
+            {
+                q: "Perhatikan beberapa pernyataan berikut terkait reaksi fotosintesis:\n(1) Terjadi di stroma\n(2) Membutuhkan foton (cahaya)\n(3) Mengikat CO2 untuk membentuk glukosa\n(4) Melibatkan fotolisis air\n(5) Menggunakan ATP dan NADPH dari reaksi terang\n\nPernyataan yang tepat mengenai Reaksi Terang fotosintesis adalah...",
+                opts: ["1 dan 3", "2 dan 4", "3 dan 5", "1, 3, dan 5", "2, 4, dan 5"],
+                key: 1
+            },
+            {
+                q: "Penumpukan asam laktat yang menyebabkan rasa pegal pada jaringan otot manusia terjadi karena...",
+                opts: [
+                    "Pasokan oksigen cukup sehingga terjadi pembentukan asam piruvat secara berlebihan",
+                    "Sel kekurangan oksigen saat aktivitas tinggi sehingga asam piruvat direduksi menjadi asam laktat",
+                    "Daur Krebs berjalan terlalu cepat tanpa pembentukan CO2",
+                    "Terjadi peningkatan suhu tubuh yang menghentikan kerja enzim glikolisis",
+                    "Glukosa diubah langsung menjadi alkohol dan CO2 di dalam sitoplasma"
+                ],
+                key: 1
+            },
+            {
+                q: "Hasil akhir dari tahap Dekarboksilasi Oksidatif untuk satu molekul asam piruvat yang memasuki mitokondria adalah...",
+                opts: [
+                    "2 Asetil-KoA, 2 NADH, dan 2 CO2",
+                    "1 Asetil-KoA, 1 NADH, dan 1 CO2",
+                    "2 ATP, 2 FADH2, dan 2 CO2",
+                    "1 Asetil-KoA, 2 ATP, dan 1 H2O",
+                    "2 Asam Sitrat, 1 NADH, dan 1 ATP"
+                ],
+                key: 1
+            },
+            {
+                q: "Pada rantai transpor elektron, molekul NADH dan FADH2 dioksidasi. Jumlah ATP yang dihasilkan dari 1 molekul NADH dan 1 molekul FADH2 secara berurutan adalah...",
+                opts: ["1 ATP dan 2 ATP", "2 ATP dan 3 ATP", "3 ATP dan 2 ATP", "3 ATP dan 3 ATP", "36 ATP dan 38 ATP"],
+                key: 2
+            },
+            {
+                q: "Salah satu perbedaan mendasar antara Anabolisme dan Katabolisme adalah...",
+                opts: [
+                    "Anabolisme memecah molekul kompleks, sedangkan katabolisme menyusun molekul sederhana",
+                    "Anabolisme membutuhkan energi (endergonik), sedangkan katabolisme membebaskan energi (eksergonik)",
+                    "Anabolisme menghasilkan ATP, sedangkan katabolisme selalu membutuhkan foton",
+                    "Anabolisme terjadi di mitokondria, sedangkan katabolisme terjadi di kloroplas",
+                    "Anabolisme hanya terjadi pada hewan, sedangkan katabolisme hanya pada tumbuhan"
+                ],
+                key: 1
+            },
+            {
+                q: "Inhibitor kompetitif mengganggu aktivitas kerja enzim dengan cara...",
+                opts: [
+                    "Merusak struktur tersier enzim secara permanen",
+                    "Mengikat sisi alosterik sehingga mengubah bentuk sisi aktif enzim",
+                    "Bersaing dengan substrat untuk mengikat sisi aktif enzim",
+                    "Menurunkan energi aktivasi reaksi secara drastis",
+                    "Menghentikan sintesis Apoenzim di dalam sel"
+                ],
+                key: 2
+            },
+            {
+                q: "Akseptor elektron terakhir pada jalur transpor elektron respirasi aerob adalah...",
+                opts: ["NAD+", "FAD", "Koenzim A", "Oksigen (O2)", "Asam Piruvat"],
+                key: 3
+            },
+            {
+                q: "Perbedaan utama antara tanaman C3 dan C4 dalam proses fiksasi karbon adalah...",
+                opts: [
+                    "Tanaman C3 mengikat CO2 menggunakan enzim RuBisCO, sedangkan C4 menggunakan PEP karboksilase pada fiksasi awal",
+                    "Tanaman C3 tidak melakukan Siklus Calvin sama sekali",
+                    "Tanaman C4 hanya membuka stomata pada malam hari",
+                    "Tanaman C3 menghasilkan produk awal berupa senyawa berkarbon 4",
+                    "Tanaman C4 tidak membutuhkan klorofil dalam reaksi terang"
+                ],
+                key: 0
+            },
+            {
+                q: "Bagian dari enzim yang berupa molekul organik non-protein yang terikat longgar dan membantu fungsi pengatalisan disebut...",
+                opts: ["Apoenzim", "Kofaktor", "Koenzim", "Holoenzim", "Sisi Alosterik"],
+                key: 2
+            },
+            {
+                q: "Tahap glikolisis terjadi di dalam sel pada bagian...",
+                opts: ["Matriks Mitokondria", "Membran Dalam Mitokondria", "Sitoplasma (Sitosol)", "Stroma Kloroplas", "Grana"],
+                key: 2
+            },
+            {
+                q: "Pada fotosintesis jalur siklik (fotofosforilasi siklik), fotosistem yang berperan serta hasil yang diperoleh adalah...",
+                opts: [
+                    "Fotosistem I; menghasilkan ATP saja",
+                    "Fotosistem II; menghasilkan ATP dan O2",
+                    "Fotosistem I dan II; menghasilkan ATP dan NADPH",
+                    "Fotosistem I; menghasilkan NADPH dan O2",
+                    "Fotosistem II; menghasilkan ATP, NADPH, dan O2"
+                ],
+                key: 0
+            },
+            {
+                q: "Tahapan Siklus Calvin (Reaksi Gelap) secara berurutan terdiri atas tiga fase utama, yaitu...",
+                opts: [
+                    "Fotolisis -> Fiksasi -> Reduksi",
+                    "Fiksasi Karbon -> Reduksi -> Regenerasi RuBP",
+                    "Dekarboksilasi -> Glikolisis -> Oksidasi",
+                    "Reduksi -> Regenerasi -> Oksidasi",
+                    "Fiksasi -> Fotolisis -> Glikolisis"
+                ],
+                key: 1
+            },
+            {
+                q: "Senyawa karbon berkarbon-4 yang dibentuk pertama kali saat fiksasi CO2 pada tanaman CAM dan C4 adalah...",
+                opts: ["Asam Sitrat", "Oksaloasetat", "PGA (Asam Phosphogliserat)", "PGAL (Phosphogliseraldehid)", "RuBP (Ribulosa Bifosfat)"],
+                key: 1
+            },
+            {
+                q: "Fermentasi alkohol yang dilakukan oleh jamur Saccharomyces cerevisiae menghasilkan produk akhir berupa...",
+                opts: ["Asam laktat, ATP, dan H2O", "Etanol, CO2, dan ATP", "Asam piruvat, NADH, dan ATP", "Asetil-KoA, CO2, dan FADH2", "Metanol, O2, dan ATP"],
+                key: 1
+            },
+            {
+                q: "Mengapa pemanasan hingga suhu di atas 60°C menyebabkan enzim kehilangan aktivitas katalisisnya?",
+                opts: [
+                    "Karena ikatan hidrogen dan struktur tersier protein enzim rusak (denaturasi)",
+                    "Karena substrat hancur terkena panas tinggi",
+                    "Karena enzim berubah menjadi kofaktor anorganik",
+                    "Karena sisi aktif enzim bertambah lebar sehingga substrat lepas",
+                    "Karena pH lingkungan otomatis menjadi sangat asam"
+                ],
+                key: 0
+            },
+            {
+                q: "Jumlah molekul ATP bersih yang dihasilkan dari pemecahan 1 molekul glukosa melalui respirasi aerob secara keseluruhan adalah...",
+                opts: ["2 ATP", "4 ATP", "30 - 32 ATP (atau 36 - 38 ATP)", "100 ATP", "12 ATP"],
+                key: 2
+            },
+            {
+                q: "Molekul ATP sering disebut sebagai 'mata uang energi' sel karena...",
+                opts: [
+                    "Menyimpan energi terbesar di dalam ikatan atom karbonnya",
+                    "Memiliki ikatan fosfat berenergi tinggi yang mudah dilepaskan melalui hidrolisis menjadi ADP",
+                    "Tidak bisa habis dan terus ada di dalam sel",
+                    "Hanya dihasilkan saat terjadi fotosintesis",
+                    "Merupakan komponen penyusun membran sel terbesar"
+                ],
+                key: 1
+            },
+            {
+                q: "Enzim Katalase di dalam sel hati berfungsi untuk menguraikan senyawa beracun H2O2 menjadi...",
+                opts: ["H2O dan O2", "H2 dan CO2", "OH- dan H+", "H2O dan CO2", "CH4 dan O2"],
+                key: 0
+            },
+            {
+                q: "Pigmen klorofil pada kloroplas paling efektif menyerap gelombang cahaya pada spektrum warna...",
+                opts: ["Hijau dan Kuning", "Merah dan Biru", "Kuning dan Jingga", "Hijau dan Nila", "Inframerah dan Ultraviolet"],
+                key: 1
+            },
+            {
+                q: "Reaksi katabolisme lemak menghasilkan glycerol dan asam lemak. Asam lemak akan masuk ke tahap respirasi seluler melalui jalur...",
+                opts: [
+                    "Glikolisis sebagai PGAL",
+                    "Beta-oksidasi menjadi Asetil-KoA",
+                    "Daur Krebs sebagai Asam Sitrat",
+                    "Transpor Elektron secara langsung",
+                    "Dekarboksilasi menjadi Asam Piruvat"
+                ],
+                key: 1
+            },
+            {
+                q: "Perhatikan faktor-faktor berikut:\n(1) Konsentrasi Substrat\n(2) Suhu\n(3) pH\n(4) Konsentrasi Enzim\n(5) Jumlah Air\n\nFaktor yang secara langsung mempengaruhi laju reaksi enzimatis ditunjukkan oleh nomor...",
+                opts: ["1, 2, dan 3 saja", "2, 3, dan 5 saja", "1, 2, 3, dan 4", "2 dan 4 saja", "Semua benar (1, 2, 3, 4, dan 5)"],
+                key: 4
+            },
+            {
+                q: "Pembentukan glukosa dari senyawa non-karbohidrat (seperti asam amino atau gliserol) di dalam tubuh dinamakan...",
+                opts: ["Glikogenolisis", "Glikogenesis", "Glukoneogenesis", "Glikolisis", "Dekarboksilasi"],
+                key: 2
+            },
+            {
+                q: "Pada fotosintesis, oksigen (O2) yang dilepaskan ke udara berasal dari pemecahan molekul...",
+                opts: ["Karbondioksida (CO2)", "Air (H2O)", "Glukosa (C6H12O6)", "Ribulosa Bifosfat (RuBP)", "ATP"],
+                key: 1
+            }
+        ];
+
+        // --- GLOBAL STATE ---
+        let questions = [];
+        let studentAnswers = []; // { selected: null or index, doubt: false }
+        let currentQuestionIndex = 0;
+        let studentProfile = { name: '', class: '' };
+        let timerInterval = null;
+        let timeRemaining = 90 * 60; // 90 mins in sec
+        let violationCount = 0;
+        let violationLogs = [];
+        let isExamActive = false;
+        const TEACHER_PASS = "guru123";
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadQuestions();
+            preventCheatingListeners();
+        });
+
+        function loadQuestions() {
+            const stored = localStorage.getItem('cbt_questions');
+            if (stored) {
+                questions = JSON.parse(stored);
+            } else {
+                questions = [...DEFAULT_QUESTIONS];
+                saveQuestionsToStorage();
+            }
+            document.getElementById('total-q-count').innerText = questions.length;
+        }
+
+        function saveQuestionsToStorage() {
+            localStorage.setItem('cbt_questions', JSON.stringify(questions));
+            document.getElementById('total-q-count').innerText = questions.length;
+        }
+
+        // --- EXAM START LOGIC ---
+        function startExam(e) {
+            e.preventDefault();
+            const name = document.getElementById('student-name').value.trim();
+            const cls = document.getElementById('student-class').value;
+
+            if (!name || !cls) return alert('Lengkapi Nama dan Kelas!');
+
+            studentProfile.name = name;
+            studentProfile.class = cls;
+
+            // Init Student Answers
+            studentAnswers = questions.map(() => ({ selected: null, doubt: false }));
+
+            // Hide Login & Show Exam UI
+            document.getElementById('section-login').classList.add('hidden');
+            document.getElementById('section-exam').classList.remove('hidden');
+            document.getElementById('header-status').classList.remove('hidden');
+
+            isExamActive = true;
+            currentQuestionIndex = 0;
+
+            renderQuestion();
+            renderNavigationGrid();
+            startTimer();
+
+            // Request Fullscreen
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        }
+
+        // --- QUESTION RENDERER ---
+        function renderQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-number-title').innerText = `Soal No. ${currentQuestionIndex + 1}`;
+            document.getElementById('question-text').innerText = q.q;
+
+            const optContainer = document.getElementById('options-container');
+            optContainer.innerHTML = '';
+
+            const labels = ['A', 'B', 'C', 'D', 'E'];
+            q.opts.forEach((optText, idx) => {
+                const isSelected = studentAnswers[currentQuestionIndex].selected === idx;
+                const optBtn = document.createElement('div');
+                optBtn.className = `p-3.5 border-2 rounded-lg cursor-pointer flex items-center space-x-3 transition ${
+                    isSelected ? 'border-indigo-600 bg-indigo-50 text-indigo-900 font-semibold' : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                }`;
+                optBtn.onclick = () => selectOption(idx);
+                optBtn.innerHTML = `
+                    <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-xs ${
+                        isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 border-slate-300'
+                    }">${labels[idx]}</div>
+                    <div class="text-sm flex-1">${optText}</div>
+                `;
+                optContainer.appendChild(optBtn);
+            });
+
+            // Doubt Checkbox
+            document.getElementById('checkbox-doubt').checked = studentAnswers[currentQuestionIndex].doubt;
+
+            // Nav buttons
+            document.getElementById('btn-prev').disabled = currentQuestionIndex === 0;
+            document.getElementById('btn-prev').classList.toggle('opacity-50', currentQuestionIndex === 0);
+
+            if (currentQuestionIndex === questions.length - 1) {
+                document.getElementById('btn-next').innerHTML = `Selesai <i class="fa-solid fa-check"></i>`;
+            } else {
+                document.getElementById('btn-next').innerHTML = `Berikutnya <i class="fa-solid fa-arrow-right"></i>`;
+            }
+
+            updateAnsweredCount();
+        }
+
+        function selectOption(optIdx) {
+            studentAnswers[currentQuestionIndex].selected = optIdx;
+            renderQuestion();
+            renderNavigationGrid();
+        }
+
+        function toggleDoubt() {
+            studentAnswers[currentQuestionIndex].doubt = document.getElementById('checkbox-doubt').checked;
+            renderNavigationGrid();
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                confirmSubmitExam();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        function jumpToQuestion(idx) {
+            currentQuestionIndex = idx;
+            renderQuestion();
+        }
+
+        function renderNavigationGrid() {
+            const grid = document.getElementById('navigation-grid');
+            grid.innerHTML = '';
+
+            questions.forEach((_, idx) => {
+                const ans = studentAnswers[idx];
+                const btn = document.createElement('button');
+                btn.onclick = () => jumpToQuestion(idx);
+
+                let bgClass = 'bg-slate-100 text-slate-700 border-slate-300';
+                if (ans.doubt) {
+                    bgClass = 'bg-amber-400 text-white border-amber-500 font-bold';
+                } else if (ans.selected !== null) {
+                    bgClass = 'bg-indigo-600 text-white border-indigo-700 font-bold';
+                }
+
+                if (idx === currentQuestionIndex) {
+                    bgClass += ' ring-2 ring-indigo-900 ring-offset-1';
+                }
+
+                btn.className = `h-9 w-full rounded border text-xs flex items-center justify-center transition ${bgClass}`;
+                btn.innerText = idx + 1;
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateAnsweredCount() {
+            const count = studentAnswers.filter(a => a.selected !== null).length;
+            document.getElementById('answered-count').innerText = `${count}/${questions.length} Terjawab`;
+        }
+
+        // --- TIMER ---
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                const mins = Math.floor(timeRemaining / 60);
+                const secs = timeRemaining % 60;
+                document.getElementById('timer-display').innerText = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    finishExam(false, "Waktu Ujian Habis");
+                }
+            }, 1000);
+        }
+
+        // --- ANTI-CHEATING SECURITY SYSTEM ---
+        function preventCheatingListeners() {
+            // 1. Detect Tab/Window Switch
+            document.addEventListener('visibilitychange', () => {
+                if (isExamActive && document.hidden) {
+                    triggerViolation("Pindah Tab / Minimize Browser");
+                }
+            });
+
+            window.addEventListener('blur', () => {
+                if (isExamActive) {
+                    triggerViolation("Fokus Window Lepas (Alt+Tab / Buka App Lain)");
+                }
+            });
+
+            // 2. Prevent Keyboard Shortcuts & Screenshot Keys
+            document.addEventListener('keydown', (e) => {
+                if (!isExamActive) return;
+
+                // Block PrintScreen
+                if (e.key === 'PrintScreen' || e.keyCode === 44) {
+                    e.preventDefault();
+                    triggerViolation("Percobaan Screenshot (PrintScreen)");
+                }
+
+                // Block Win+Shift+S, Ctrl+P, F12, Ctrl+Shift+I
+                if (
+                    (e.metaKey && e.shiftKey && e.key === 'S') ||
+                    (e.ctrlKey && e.key === 'p') ||
+                    (e.ctrlKey && e.key === 'c') ||
+                    (e.ctrlKey && e.key === 'v') ||
+                    e.key === 'F12' ||
+                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))
+                ) {
+                    e.preventDefault();
+                    triggerViolation(`Shortcut Terlarang (${e.key})`);
+                }
+            });
+
+            // 3. Prevent Right Click & Text Select
+            document.addEventListener('contextmenu', (e) => {
+                if (isExamActive) e.preventDefault();
+            });
+        }
+
+        function triggerViolation(reason) {
+            if (!isExamActive) return;
+
+            violationCount++;
+            const timestamp = new Date().toLocaleTimeString('id-ID');
+            violationLogs.push(`[${timestamp}] ${reason}`);
+
+            document.getElementById('violation-count').innerText = violationCount;
+
+            if (violationCount >= 3) {
+                // DISQUALIFIED
+                isExamActive = false;
+                clearInterval(timerInterval);
+                finishExam(true, "Diskualifikasi (Batas 3x Pelanggaran Terlampaui)");
+            } else {
+                // Show Warning Modal
+                document.getElementById('warning-reason').innerText = reason;
+                document.getElementById('warning-count-num').innerText = violationCount;
+                document.getElementById('modal-warning').classList.remove('hidden');
+            }
+        }
+
+        function closeWarningModal() {
+            document.getElementById('modal-warning').classList.add('hidden');
+        }
+
+        // --- SUBMIT & FINISH EXAM ---
+        function confirmSubmitExam() {
+            const unanswered = studentAnswers.filter(a => a.selected === null).length;
+            let msg = "Apakah Anda yakin ingin menyelesaikan ujian?";
+            if (unanswered > 0) msg += ` Ada ${unanswered} soal yang belum dijawab!`;
+
+            if (confirm(msg)) {
+                finishExam(false, "Selesai Normal");
+            }
+        }
+
+        function finishExam(isDisqualified = false, reason = "") {
+            isExamActive = false;
+            clearInterval(timerInterval);
+
+            // Calculate Score
+            let correctCount = 0;
+            let finalScore = 0;
+
+            if (!isDisqualified) {
+                studentAnswers.forEach((ans, idx) => {
+                    if (ans.selected === questions[idx].key) {
+                        correctCount++;
+                    }
+                });
+                finalScore = Math.round((correctCount / questions.length) * 100);
+            } else {
+                finalScore = 0; // AUTO ZERO FOR CHEATING
+            }
+
+            // Save to Teacher Results Storage
+            saveExamResultToStorage({
+                id: Date.now(),
+                timestamp: new Date().toLocaleString('id-ID'),
+                name: studentProfile.name,
+                class: studentProfile.class,
+                score: finalScore,
+                isDisqualified: isDisqualified,
+                violations: violationCount,
+                logs: [...violationLogs]
+            });
+
+            // UI Render Result
+            document.getElementById('section-exam').classList.add('hidden');
+            document.getElementById('header-status').classList.add('hidden');
+            document.getElementById('section-result').classList.remove('hidden');
+
+            document.getElementById('res-student-name').innerText = studentProfile.name;
+            document.getElementById('res-student-class').innerText = studentProfile.class;
+            document.getElementById('res-violation-count').innerText = `${violationCount} kali`;
+
+            const iconContainer = document.getElementById('result-icon-container');
+            const resultScoreEl = document.getElementById('result-score');
+            const resultStatusEl = document.getElementById('result-status');
+
+            if (isDisqualified) {
+                iconContainer.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-100 text-red-600";
+                iconContainer.innerHTML = `<i class="fa-solid fa-ban text-4xl"></i>`;
+                document.getElementById('result-title').innerText = "UJIAN DIBATALKAN (DISKUALIFIKASI)";
+                document.getElementById('result-subtitle').innerText = "Terdeteksi melakukan pelanggaran aturan keamanan ujian sebanyak 3 kali.";
+                resultScoreEl.innerText = "0";
+                resultScoreEl.className = "text-5xl font-extrabold text-red-600 my-2";
+                resultStatusEl.innerText = "NILAI NOL (KECURANGAN)";
+                resultStatusEl.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-red-200 text-red-800";
+            } else {
+                iconContainer.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-emerald-100 text-emerald-600";
+                iconContainer.innerHTML = `<i class="fa-solid fa-circle-check text-4xl"></i>`;
+                document.getElementById('result-title').innerText = "Ujian Berhasil Disubmit";
+                document.getElementById('result-subtitle').innerText = "Nilai Anda telah berhasil dicatat oleh sistem.";
+                resultScoreEl.innerText = finalScore;
+                resultScoreEl.className = "text-5xl font-extrabold text-indigo-900 my-2";
+                resultStatusEl.innerText = finalScore >= 75 ? "LULUS KKM" : "REMIDIAL";
+                resultStatusEl.className = `inline-block px-3 py-1 rounded-full text-xs font-bold ${finalScore >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`;
+            }
+        }
+
+        function saveExamResultToStorage(resultObj) {
+            const existing = JSON.parse(localStorage.getItem('cbt_results') || '[]');
+            existing.unshift(resultObj);
+            localStorage.setItem('cbt_results', JSON.stringify(existing));
+        }
+
+        // --- TEACHER PANEL LOGIC ---
+        function openTeacherAuthModal() {
+            document.getElementById('modal-teacher-auth').classList.remove('hidden');
+        }
+
+        function closeTeacherAuthModal() {
+            document.getElementById('modal-teacher-auth').classList.add('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+            document.getElementById('teacher-password').value = '';
+        }
+
+        function authenticateTeacher() {
+            const pass = document.getElementById('teacher-password').value;
+            if (pass === TEACHER_PASS) {
+                closeTeacherAuthModal();
+                showTeacherPanel();
+            } else {
+                document.getElementById('auth-error').classList.remove('hidden');
+            }
+        }
+
+        function showTeacherPanel() {
+            document.getElementById('section-login').classList.add('hidden');
+            document.getElementById('section-exam').classList.add('hidden');
+            document.getElementById('section-result').classList.add('hidden');
+            document.getElementById('section-teacher').classList.remove('hidden');
+
+            renderTeacherResults();
+            renderTeacherQuestionsList();
+        }
+
+        function closeTeacherPanel() {
+            document.getElementById('section-teacher').classList.add('hidden');
+            document.getElementById('section-login').classList.remove('hidden');
+        }
+
+        function switchTeacherTab(tabName) {
+            if (tabName === 'results') {
+                document.getElementById('teacher-tab-results').classList.remove('hidden');
+                document.getElementById('teacher-tab-questions').classList.add('hidden');
+                document.getElementById('tab-btn-results').className = "px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600";
+                document.getElementById('tab-btn-questions').className = "px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-indigo-600";
+            } else {
+                document.getElementById('teacher-tab-results').classList.add('hidden');
+                document.getElementById('teacher-tab-questions').classList.remove('hidden');
+                document.getElementById('tab-btn-questions').className = "px-4 py-2 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600";
+                document.getElementById('tab-btn-results').className = "px-4 py-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-indigo-600";
+            }
+        }
+
+        function renderTeacherResults() {
+            const results = JSON.parse(localStorage.getItem('cbt_results') || '[]');
+            const tbody = document.getElementById('teacher-results-tbody');
+            tbody.innerHTML = '';
+
+            if (results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-slate-400">Belum ada data siswa yang menyelesaikan ujian.</td></tr>`;
+                return;
+            }
+
+            results.forEach(res => {
+                const tr = document.createElement('tr');
+                tr.className = res.isDisqualified ? 'bg-red-50' : 'hover:bg-slate-50';
+
+                const logsText = res.logs.length > 0 ? res.logs.join('<br>') : '<span class="text-slate-400">Bersih (Tidak Ada Pelanggaran)</span>';
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-500">${res.timestamp}</td>
+                    <td class="p-3 font-bold">${res.name}</td>
+                    <td class="p-3">${res.class}</td>
+                    <td class="p-3 text-center font-extrabold text-sm ${res.isDisqualified ? 'text-red-600' : 'text-indigo-900'}">${res.score}</td>
+                    <td class="p-3 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${res.isDisqualified ? 'bg-red-200 text-red-800' : 'bg-emerald-100 text-emerald-800'}">
+                            ${res.isDisqualified ? 'DISKUALIFIKASI' : 'SELESAI'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center font-bold ${res.violations > 0 ? 'text-red-600' : 'text-slate-500'}">${res.violations}x</td>
+                    <td class="p-3 font-mono text-[10px] text-slate-600">${logsText}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearAllResults() {
+            if (confirm('Apakah Anda yakin ingin menghapus seluruh rekap rekapitulasi nilai siswa?')) {
+                localStorage.removeItem('cbt_results');
+                renderTeacherResults();
+            }
+        }
+
+        // --- QUESTION EDITOR LOGIC ---
+        function renderTeacherQuestionsList() {
+            const container = document.getElementById('teacher-questions-list');
+            container.innerHTML = '';
+
+            const labels = ['A', 'B', 'C', 'D', 'E'];
+
+            questions.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = "p-4 border rounded-lg bg-white shadow-sm space-y-2";
+                
+                let optsHTML = q.opts.map((opt, oIdx) => `
+                    <div class="text-xs ${oIdx === q.key ? 'font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200' : 'text-slate-600'}">
+                        ${labels[oIdx]}. ${opt} ${oIdx === q.key ? '✓ (Kunci)' : ''}
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="font-bold text-xs text-indigo-900 bg-indigo-100 px-2 py-0.5 rounded">No. ${idx + 1}</span>
+                        <div class="flex gap-2">
+                            <button onclick="editQuestion(${idx})" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold"><i class="fa-solid fa-pen"></i> Edit</button>
+                            <button onclick="deleteQuestion(${idx})" class="text-xs text-red-600 hover:text-red-800 font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+                        </div>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-800">${q.q}</p>
+                    <div class="space-y-1 pl-2 border-l-2 border-slate-200 mt-2">${optsHTML}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function openQuestionModal(editIdx = null) {
+            document.getElementById('modal-question-editor').classList.remove('hidden');
+            
+            if (editIdx !== null) {
+                // Edit mode
+                document.getElementById('editor-modal-title').innerText = `Edit Soal No. ${editIdx + 1}`;
+                document.getElementById('edit-q-index').value = editIdx;
+                
+                const q = questions[editIdx];
+                document.getElementById('edit-q-text').value = q.q;
+                q.opts.forEach((opt, i) => {
+                    document.getElementById(`edit-opt-${i}`).value = opt;
+                });
+                document.getElementById('edit-q-key').value = q.key;
+            } else {
+                // New question mode
+                document.getElementById('editor-modal-title').innerText = `Tambah Soal Baru`;
+                document.getElementById('edit-q-index').value = "-1";
+                document.getElementById('edit-q-text').value = "";
+                for (let i = 0; i < 5; i++) {
+                    document.getElementById(`edit-opt-${i}`).value = "";
+                }
+                document.getElementById('edit-q-key').value = "0";
+            }
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('modal-question-editor').classList.add('hidden');
+        }
+
+        function editQuestion(idx) {
+            openQuestionModal(idx);
+        }
+
+        function saveQuestion() {
+            const idx = parseInt(document.getElementById('edit-q-index').value);
+            const qText = document.getElementById('edit-q-text').value.trim();
+            const opts = [
+                document.getElementById('edit-opt-0').value.trim(),
+                document.getElementById('edit-opt-1').value.trim(),
+                document.getElementById('edit-opt-2').value.trim(),
+                document.getElementById('edit-opt-3').value.trim(),
+                document.getElementById('edit-opt-4').value.trim()
+            ];
+            const key = parseInt(document.getElementById('edit-q-key').value);
+
+            if (!qText || opts.some(o => o === "")) {
+                return alert("Mohon lengkapi teks soal dan seluruh 5 pilihan jawaban!");
+            }
+
+            const qObj = { q: qText, opts: opts, key: key };
+
+            if (idx === -1) {
+                // New
+                questions.push(qObj);
+            } else {
+                // Update
+                questions[idx] = qObj;
+            }
+
+            saveQuestionsToStorage();
+            closeQuestionModal();
+            renderTeacherQuestionsList();
+        }
+
+        function deleteQuestion(idx) {
+            if (confirm(`Apakah Anda yakin ingin menghapus Soal No. ${idx + 1}?`)) {
+                questions.splice(idx, 1);
+                saveQuestionsToStorage();
+                renderTeacherQuestionsList();
+            }
+        }
+
+        function resetQuestionsToDefault() {
+            if (confirm("Reset bank soal kembali ke 25 soal standar Metabolisme Sel bawaan sistem?")) {
+                questions = [...DEFAULT_QUESTIONS];
+                saveQuestionsToStorage();
+                renderTeacherQuestionsList();
+            }
+        }
+    </script>
+</body>
+</html>
